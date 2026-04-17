@@ -14,12 +14,12 @@ export interface MetaRow {
   value: string
 }
 
-export class InkwellDB extends Dexie {
+export class TypemonoDB extends Dexie {
   docs!: Table<DocRow, string>
   meta!: Table<MetaRow, string>
 
   constructor() {
-    super('inkwell')
+    super('typemono')
     this.version(1).stores({
       docs: 'id, updatedAt, title',
       meta: 'key',
@@ -27,4 +27,4 @@ export class InkwellDB extends Dexie {
   }
 }
 
-export const db = new InkwellDB()
+export const db = new TypemonoDB()

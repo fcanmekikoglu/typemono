@@ -22,9 +22,9 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
       },
       manifest: {
-        name: 'Inkwell — Markdown Editor',
-        short_name: 'Inkwell',
-        description: 'Offline-first WYSIWYG markdown editor',
+        name: 'Typemono',
+        short_name: 'Typemono',
+        description: 'Minimalist, monochrome PWA markdown editor',
         theme_color: '#0a1418',
         background_color: '#0a1418',
         display: 'standalone',
