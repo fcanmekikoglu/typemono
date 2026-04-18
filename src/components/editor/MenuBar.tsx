@@ -316,7 +316,7 @@ export default function MenuBar({ doc, commands, onOpenPalette, confirm }: Props
       <div className="menubar-brand" />
 
       <nav className="menubar-menus" aria-label="Application menu">
-        <Menu label={t.menu.file} width={240} id="file-menu-trigger">
+        <Menu label={t.menu.file} width={340} id="file-menu-trigger">
           {(close) => (
             <>
               {FILE_ACTION_IDS_TOP.map((id) => {
@@ -344,6 +344,124 @@ export default function MenuBar({ doc, commands, onOpenPalette, confirm }: Props
                   />
                 )
               })}
+              <MenuSep />
+              <SubMenuTrigger
+                icon={<FileText size={14} />}
+                label={t.menu.documents}
+                badge={<span className="menu-trigger-badge">{docs?.length ?? 0}</span>}
+                open={docsOpen}
+                onClick={() => setDocsOpen((o) => !o)}
+              />
+              {docsOpen && (
+                <>
+                  <div className="menu-search menu-search-indented">
+                    <SearchIcon size={13} />
+                    <input
+                      type="search"
+                      placeholder={t.documentsMenu.searchPlaceholder}
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'ArrowDown') {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          const firstDoc = e.currentTarget.closest('.menu-pop')?.querySelector<HTMLElement>('.menu-doc[tabindex="0"]')
+                          firstDoc?.focus()
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="menu-list">
+                    {filteredDocs.length === 0 && (
+                      <p className="menu-empty">{t.documentsMenu.empty}</p>
+                    )}
+                    {filteredDocs.map((d) => {
+                      const isActive = d.id === doc.id
+                      const isFocused = d.id === focusedDocId
+                      return (
+                        <div
+                          key={d.id}
+                          className={`menu-doc ${isActive ? 'is-active' : ''} ${isFocused ? 'is-keyboard-focused' : ''}`}
+                          onMouseEnter={() => setFocusedDocId(d.id)}
+                          onMouseLeave={() => setFocusedDocId(null)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Backspace' || e.key === 'Delete') {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              void handleDeleteDoc(d, isActive, close)
+                              return
+                            }
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              void handleSwitchDoc(d.id, close)
+                              return
+                            }
+                            if (e.key === 'ArrowDown') {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              const next = e.currentTarget.nextElementSibling as HTMLElement | null
+                              if (next?.matches('.menu-doc')) {
+                                next.focus()
+                              } else {
+                                e.currentTarget.closest('.menu-pop')?.querySelector<HTMLElement>('[role="menuitem"]:not(:disabled)')?.focus()
+                              }
+                              return
+                            }
+                            if (e.key === 'ArrowUp') {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              const prev = e.currentTarget.previousElementSibling as HTMLElement | null
+                              if (prev?.matches('.menu-doc')) {
+                                prev.focus()
+                              } else {
+                                e.currentTarget.closest('.menu-pop')?.querySelector<HTMLElement>('input[type="search"]')?.focus()
+                              }
+                            }
+                          }}
+                          tabIndex={0}
+                        >
+                          <button
+                            type="button"
+                            className="menu-doc-main"
+                            onClick={() => handleSwitchDoc(d.id, close)}
+                            tabIndex={-1}
+                          >
+                            <span className="menu-doc-icon">
+                              <FileText size={13} />
+                              {d.linkedHandleKey && (
+                                <span className="menu-doc-badge" title={t.documentsMenu.linkedHint} />
+                              )}
+                            </span>
+                            <span className="menu-doc-body">
+                              <span className="menu-doc-title">{d.title || 'Untitled'}</span>
+                              <span className="menu-doc-meta">
+                                {formatRelative(d.updatedAt)} {t.documentsMenu.agoSuffix}
+                              </span>
+                            </span>
+                            {isActive && <Check size={13} className="menu-doc-check" />}
+                          </button>
+                          <button
+                            type="button"
+                            className="menu-doc-delete"
+                            onClick={() => void handleDeleteDoc(d, isActive, close)}
+                            title={t.actions.deleteDocument}
+                            aria-label={`${t.actions.deleteDocument} ${d.title}`}
+                            tabIndex={-1}
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <MenuItem
+                    icon={<FilePlus size={14} />}
+                    label={t.actions.newDocument}
+                    onClick={() => handleNewInSidebar(close)}
+                  />
+                </>
+              )}
               <MenuSep />
               {byId.get('file.delete') && (
                 <MenuItem
@@ -406,131 +524,6 @@ export default function MenuBar({ doc, commands, onOpenPalette, confirm }: Props
           )}
         </Menu>
 
-        <Menu
-          label={
-            <>
-              {t.menu.documents}
-              <span className="menu-trigger-badge">{docs?.length ?? 0}</span>
-            </>
-          }
-          width={340}
-          autoFocusFirst={false}
-        >
-          {(close) => (
-            <>
-              <div className="menu-search">
-                <SearchIcon size={13} />
-                <input
-                  type="search"
-                  placeholder={t.documentsMenu.searchPlaceholder}
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === 'ArrowDown') {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      const firstDoc = e.currentTarget.closest('.menu-pop')?.querySelector<HTMLElement>('.menu-doc[tabindex="0"]')
-                      firstDoc?.focus()
-                    }
-                  }}
-                />
-              </div>
-              <div className="menu-list">
-                {filteredDocs.length === 0 && (
-                  <p className="menu-empty">{t.documentsMenu.empty}</p>
-                )}
-                {filteredDocs.map((d) => {
-                  const isActive = d.id === doc.id
-                  const isFocused = d.id === focusedDocId
-                  return (
-                    <div
-                      key={d.id}
-                      className={`menu-doc ${isActive ? 'is-active' : ''} ${isFocused ? 'is-keyboard-focused' : ''}`}
-                      // Track keyboard focus per row
-                      onMouseEnter={() => setFocusedDocId(d.id)}
-                      onMouseLeave={() => setFocusedDocId(null)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Backspace' || e.key === 'Delete') {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          void handleDeleteDoc(d, isActive, close)
-                          return
-                        }
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          void handleSwitchDoc(d.id, close)
-                          return
-                        }
-                        if (e.key === 'ArrowDown') {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          const next = e.currentTarget.nextElementSibling as HTMLElement | null
-                          if (next?.matches('.menu-doc')) {
-                            next.focus()
-                          } else {
-                            e.currentTarget.closest('.menu-pop')?.querySelector<HTMLElement>('[role="menuitem"]:not(:disabled)')?.focus()
-                          }
-                          return
-                        }
-                        if (e.key === 'ArrowUp') {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          const prev = e.currentTarget.previousElementSibling as HTMLElement | null
-                          if (prev?.matches('.menu-doc')) {
-                            prev.focus()
-                          } else {
-                            e.currentTarget.closest('.menu-pop')?.querySelector<HTMLElement>('input[type="search"]')?.focus()
-                          }
-                        }
-                      }}
-                      // Make the row keyboard-focusable so keydown fires
-                      tabIndex={0}
-                    >
-                      <button
-                        type="button"
-                        className="menu-doc-main"
-                        onClick={() => handleSwitchDoc(d.id, close)}
-                        // Prevent the row tabIndex from stealing focus from inner buttons
-                        tabIndex={-1}
-                      >
-                        <span className="menu-doc-icon">
-                          <FileText size={13} />
-                          {d.linkedHandleKey && (
-                            <span className="menu-doc-badge" title={t.documentsMenu.linkedHint} />
-                          )}
-                        </span>
-                        <span className="menu-doc-body">
-                          <span className="menu-doc-title">{d.title || 'Untitled'}</span>
-                          <span className="menu-doc-meta">
-                            {formatRelative(d.updatedAt)} {t.documentsMenu.agoSuffix}
-                          </span>
-                        </span>
-                        {isActive && <Check size={13} className="menu-doc-check" />}
-                      </button>
-                      <button
-                        type="button"
-                        className="menu-doc-delete"
-                        onClick={() => void handleDeleteDoc(d, isActive, close)}
-                        title={t.actions.deleteDocument}
-                        aria-label={`${t.actions.deleteDocument} ${d.title}`}
-                        tabIndex={-1}
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
-                  )
-                })}
-              </div>
-              <MenuSep />
-              <MenuItem
-                icon={<FilePlus size={14} />}
-                label={t.actions.newDocument}
-                onClick={() => handleNewInSidebar(close)}
-              />
-            </>
-          )}
-        </Menu>
       </nav>
 
       <div className="menubar-title" title={doc.title}>

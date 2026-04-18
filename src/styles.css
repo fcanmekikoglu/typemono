@@ -408,6 +408,7 @@ input, textarea {
   color: var(--ink);
 }
 .menu-search input::placeholder { color: var(--ink-dim); }
+.menu-search-indented { margin-top: 6px; }
 
 .menu-list {
   max-height: 320px;
@@ -417,6 +418,17 @@ input, textarea {
   display: flex;
   flex-direction: column;
   gap: 1px;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--ink) 18%, transparent) transparent;
+}
+.menu-list::-webkit-scrollbar { width: 4px; }
+.menu-list::-webkit-scrollbar-track { background: transparent; }
+.menu-list::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--ink) 18%, transparent);
+  border-radius: 999px;
+}
+.menu-list::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--ink) 30%, transparent);
 }
 
 .menu-empty {
