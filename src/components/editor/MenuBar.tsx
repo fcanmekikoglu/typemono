@@ -190,10 +190,7 @@ export default function MenuBar({ doc, commands, onOpenPalette }: Props) {
 
   return (
     <header className="menubar">
-      <div className="menubar-brand">
-        <span className="menubar-brand-dot" />
-        <span className="menubar-brand-name">Typemono</span>
-      </div>
+      <div className="menubar-brand" />
 
       <nav className="menubar-menus" aria-label="Application menu">
         <Menu label="File" width={240}>
