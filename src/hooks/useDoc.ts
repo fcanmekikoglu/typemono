@@ -14,7 +14,14 @@ const docChannel =
 export function useDoc(id: string | undefined) {
   const [externalContent, setExternalContent] = useState<string | null>(null)
   const [externalCursor, setExternalCursor] = useState<{ from: number; to: number } | null>(null)
+  const [status, setStatus] = useState<SaveStatus>('idle')
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null)
+  const timer = useRef<number | null>(null)
+  const latest = useRef<string>('')
   const rawDoc = useLiveQuery(() => (id ? db.docs.get(id) : undefined), [id], LOADING)
+
+  const isLoading = rawDoc === LOADING
+  const doc = isLoading ? undefined : (rawDoc as Awaited<ReturnType<typeof db.docs.get>>)
 
   useEffect(() => {
     if (!docChannel || !id) return
@@ -28,13 +35,6 @@ export function useDoc(id: string | undefined) {
     docChannel.addEventListener('message', handler)
     return () => docChannel.removeEventListener('message', handler)
   }, [id])
-
-  const isLoading = rawDoc === LOADING
-  const doc = isLoading ? undefined : (rawDoc as Awaited<ReturnType<typeof db.docs.get>>)
-  const [status, setStatus] = useState<SaveStatus>('idle')
-  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null)
-  const timer = useRef<number | null>(null)
-  const latest = useRef<string>('')
 
   useEffect(() => {
     return () => {
