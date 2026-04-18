@@ -43,7 +43,8 @@ import {
 } from '../../lib/fs'
 import { openPrintWindow, toStandaloneHtml } from '../../lib/export'
 import { slugForFilename } from '../../lib/markdown'
-import { useTheme, type ThemeMode } from '../../hooks/useTheme'
+import { useTheme } from '../../hooks/useTheme'
+import { THEMES, type Theme } from '../../lib/themes'
 
 interface MenuProps {
   label: ReactNode
@@ -163,7 +164,7 @@ interface Props {
 
 export default function MenuBar({ doc }: Props) {
   const navigate = useNavigate()
-  const { mode, setMode } = useTheme()
+  const { theme, setTheme } = useTheme()
   const docs = useLiveQuery(() => db.docs.orderBy('updatedAt').reverse().toArray(), [])
   const [query, setQuery] = useState('')
 
@@ -221,13 +222,13 @@ export default function MenuBar({ doc }: Props) {
   }
 
   async function handleExportHtml(close: () => void) {
-    const html = await toStandaloneHtml(doc.title, doc.content)
+    const html = await toStandaloneHtml(doc.title, doc.content, theme)
     downloadFile(`${slugForFilename(doc.title)}.html`, html, 'text/html')
     close()
   }
 
   async function handleExportPdf(close: () => void) {
-    await openPrintWindow(doc.title, doc.content)
+    await openPrintWindow(doc.title, doc.content, theme)
     close()
   }
 
@@ -259,11 +260,10 @@ export default function MenuBar({ doc }: Props) {
     await deleteDoc(id)
   }
 
-  const ThemeIcon = mode === 'light' ? Sun : mode === 'dark' ? MoonStar : SunMoon
-  const themeLabelMap: Record<ThemeMode, string> = {
-    auto: 'Auto',
-    light: 'Light',
-    dark: 'Dark',
+  const themeIconMap: Record<Theme, typeof Sun> = {
+    github: SunMoon,
+    light: Sun,
+    dark: MoonStar,
   }
 
   return (
@@ -328,21 +328,30 @@ export default function MenuBar({ doc }: Props) {
           )}
         </Menu>
 
-        <Menu label="View" width={200}>
+        <Menu label="Settings" width={260}>
           {(close) => (
             <>
-              {(['auto', 'light', 'dark'] as const).map((m) => (
-                <MenuItem
-                  key={m}
-                  icon={m === 'auto' ? <SunMoon size={14} /> : m === 'light' ? <Sun size={14} /> : <MoonStar size={14} />}
-                  label={themeLabelMap[m]}
-                  hint={mode === m ? <Check size={12} /> : null}
-                  onClick={() => {
-                    setMode(m)
-                    close()
-                  }}
-                />
-              ))}
+              <div className="menu-section-label">Theme</div>
+              {(['github', 'light', 'dark'] as const).map((t) => {
+                const Icon = themeIconMap[t]
+                return (
+                  <MenuItem
+                    key={t}
+                    icon={<Icon size={14} />}
+                    label={
+                      <span className="menu-theme-label">
+                        <span>{THEMES[t].label}</span>
+                        <span className="menu-theme-hint">{THEMES[t].description}</span>
+                      </span>
+                    }
+                    hint={theme === t ? <Check size={12} /> : null}
+                    onClick={() => {
+                      setTheme(t)
+                      close()
+                    }}
+                  />
+                )
+              })}
             </>
           )}
         </Menu>
@@ -428,17 +437,6 @@ export default function MenuBar({ doc }: Props) {
         )}
       </div>
 
-      <div className="menubar-right">
-        <button
-          type="button"
-          className="icon-btn"
-          onClick={() => setMode(mode === 'light' ? 'dark' : mode === 'dark' ? 'auto' : 'light')}
-          title={`Theme: ${themeLabelMap[mode]} (click to cycle)`}
-          aria-label={`Theme: ${themeLabelMap[mode]}`}
-        >
-          <ThemeIcon size={15} />
-        </button>
-      </div>
     </header>
   )
 }

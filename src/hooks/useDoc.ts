@@ -6,8 +6,12 @@ import { writeToHandle } from '../lib/fs'
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'dirty' | 'error'
 
+const LOADING = Symbol('loading')
+
 export function useDoc(id: string | undefined) {
-  const doc = useLiveQuery(() => (id ? db.docs.get(id) : undefined), [id])
+  const rawDoc = useLiveQuery(() => (id ? db.docs.get(id) : undefined), [id], LOADING)
+  const isLoading = rawDoc === LOADING
+  const doc = isLoading ? undefined : (rawDoc as Awaited<ReturnType<typeof db.docs.get>>)
   const [status, setStatus] = useState<SaveStatus>('idle')
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null)
   const timer = useRef<number | null>(null)
@@ -44,5 +48,5 @@ export function useDoc(id: string | undefined) {
     }, 500)
   }
 
-  return { doc, status, lastSavedAt, queueSave }
+  return { doc, isLoading, status, lastSavedAt, queueSave }
 }

@@ -10,16 +10,24 @@ export const Route = createFileRoute('/doc/$docId')({ component: DocPage })
 
 function DocPage() {
   const { docId } = Route.useParams()
-  const { doc, status, lastSavedAt, queueSave } = useDoc(docId)
+  const { doc, isLoading, status, lastSavedAt, queueSave } = useDoc(docId)
 
   useEffect(() => {
     if (docId) void setLastOpened(docId)
   }, [docId])
 
-  if (!doc) {
+  if (isLoading) {
     return (
       <div className="app-shell">
         <div className="editor-loading">Loading…</div>
+      </div>
+    )
+  }
+
+  if (!doc) {
+    return (
+      <div className="app-shell">
+        <div className="editor-loading">Document not found.</div>
       </div>
     )
   }
