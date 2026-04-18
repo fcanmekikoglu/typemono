@@ -2,12 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Search } from 'lucide-react'
 import {
-  SECTION_LABEL,
   filterCommands,
   groupCommands,
   type Command,
 } from '../../lib/commands'
 import { MOD_LABEL } from '../../hooks/useHotkey'
+import { useLocale } from '../../hooks/useLocale'
 
 interface Props {
   open: boolean
@@ -16,6 +16,7 @@ interface Props {
 }
 
 export default function CommandPalette({ open, onClose, commands }: Props) {
+  const { t } = useLocale()
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState(0)
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -100,7 +101,7 @@ export default function CommandPalette({ open, onClose, commands }: Props) {
             ref={inputRef}
             type="text"
             className="palette-input"
-            placeholder="Search documents and actions…"
+            placeholder={t.palette.placeholder}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value)
@@ -109,15 +110,15 @@ export default function CommandPalette({ open, onClose, commands }: Props) {
             autoComplete="off"
             spellCheck={false}
           />
-          <span className="kbd palette-esc-hint">Esc</span>
+          <span className="kbd palette-esc-hint">{t.palette.footer.esc}</span>
         </div>
         <div className="palette-results" ref={listRef}>
           {filtered.length === 0 ? (
-            <p className="palette-empty">No matches.</p>
+            <p className="palette-empty">{t.palette.empty}</p>
           ) : (
             groups.map((g) => (
               <div key={g.section} className="palette-group">
-                <div className="palette-section-label">{SECTION_LABEL[g.section]}</div>
+                <div className="palette-section-label">{t.palette.sectionLabel[g.section]}</div>
                 {g.items.map((cmd) => {
                   const idx = flatIndex.get(cmd.id)!
                   const isSelected = idx === selected
@@ -149,16 +150,16 @@ export default function CommandPalette({ open, onClose, commands }: Props) {
           <span className="palette-footer-group">
             <span className="kbd">↑</span>
             <span className="kbd">↓</span>
-            <span>navigate</span>
+            <span>{t.palette.footer.navigate}</span>
           </span>
           <span className="palette-footer-group">
             <span className="kbd">↵</span>
-            <span>run</span>
+            <span>{t.palette.footer.run}</span>
           </span>
           <span className="palette-footer-group">
             <span className="kbd">{MOD_LABEL}</span>
             <span className="kbd">K</span>
-            <span>toggle</span>
+            <span>{t.palette.footer.toggle}</span>
           </span>
         </footer>
       </div>

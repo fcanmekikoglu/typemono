@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AlertTriangle, Check, CircleDot, Loader2 } from 'lucide-react'
 import type { SaveStatus } from '../../hooks/useDoc'
+import { useLocale } from '../../hooks/useLocale'
 import { wordCount } from '../../lib/markdown'
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function StatusBar({ content, status, lastSavedAt, linked }: Props) {
+  const { t, locale } = useLocale()
   const words = wordCount(content)
   const chars = content.length
   const [now, setNow] = useState(() => Date.now())
@@ -21,25 +23,25 @@ export default function StatusBar({ content, status, lastSavedAt, linked }: Prop
     return () => window.clearInterval(id)
   }, [lastSavedAt])
 
-  let label = 'Ready'
+  let label: string = t.status.ready
   let Icon: typeof Check = CircleDot
   let tone: 'ok' | 'warn' | 'error' | 'muted' = 'muted'
 
   if (status === 'saving') {
-    label = 'Saving…'
+    label = t.status.saving
     Icon = Loader2
     tone = 'warn'
   } else if (status === 'dirty') {
-    label = 'Editing'
+    label = t.status.editing
     Icon = CircleDot
     tone = 'warn'
   } else if (status === 'saved') {
     const ago = lastSavedAt ? Math.max(0, Math.round((now - lastSavedAt) / 1000)) : 0
-    label = ago < 5 ? 'Saved' : `Saved ${ago}s ago`
+    label = ago < 5 ? t.status.saved : t.status.savedAgo(ago)
     Icon = Check
     tone = 'ok'
   } else if (status === 'error') {
-    label = 'Save failed'
+    label = t.status.saveFailed
     Icon = AlertTriangle
     tone = 'error'
   }
@@ -49,12 +51,12 @@ export default function StatusBar({ content, status, lastSavedAt, linked }: Prop
       <div className={`statusbar-status tone-${tone}`}>
         <Icon size={12} className={status === 'saving' ? 'spin' : ''} />
         <span>{label}</span>
-        {linked && <span className="statusbar-linked">· synced to disk</span>}
+        {linked && <span className="statusbar-linked">{t.status.syncedToDisk}</span>}
       </div>
       <div className="statusbar-meta">
-        <span>{words.toLocaleString()} words</span>
+        <span>{words.toLocaleString(locale)} {t.status.words}</span>
         <span>·</span>
-        <span>{chars.toLocaleString()} chars</span>
+        <span>{chars.toLocaleString(locale)} {t.status.chars}</span>
       </div>
     </footer>
   )

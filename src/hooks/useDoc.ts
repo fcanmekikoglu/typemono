@@ -8,8 +8,27 @@ export type SaveStatus = 'idle' | 'saving' | 'saved' | 'dirty' | 'error'
 
 const LOADING = Symbol('loading')
 
+const docChannel =
+  typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('doc-sync') : null
+
 export function useDoc(id: string | undefined) {
+  const [externalContent, setExternalContent] = useState<string | null>(null)
+  const [externalCursor, setExternalCursor] = useState<{ from: number; to: number } | null>(null)
   const rawDoc = useLiveQuery(() => (id ? db.docs.get(id) : undefined), [id], LOADING)
+
+  useEffect(() => {
+    if (!docChannel || !id) return
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === 'content' && e.data?.id === id) {
+        setExternalContent(e.data.content as string)
+      } else if (e.data?.type === 'cursor' && e.data?.id === id) {
+        setExternalCursor({ from: e.data.from as number, to: e.data.to as number })
+      }
+    }
+    docChannel.addEventListener('message', handler)
+    return () => docChannel.removeEventListener('message', handler)
+  }, [id])
+
   const isLoading = rawDoc === LOADING
   const doc = isLoading ? undefined : (rawDoc as Awaited<ReturnType<typeof db.docs.get>>)
   const [status, setStatus] = useState<SaveStatus>('idle')
@@ -27,6 +46,8 @@ export function useDoc(id: string | undefined) {
     if (!id) return
     latest.current = content
     setStatus('dirty')
+    // Broadcast immediately to other tabs — no DB round-trip needed for live sync
+    docChannel?.postMessage({ type: 'content', id, content })
     if (timer.current) window.clearTimeout(timer.current)
     timer.current = window.setTimeout(async () => {
       setStatus('saving')
@@ -48,5 +69,10 @@ export function useDoc(id: string | undefined) {
     }, 500)
   }
 
-  return { doc, isLoading, status, lastSavedAt, queueSave }
+  function broadcastCursor(from: number, to: number) {
+    if (!id) return
+    docChannel?.postMessage({ type: 'cursor', id, from, to })
+  }
+
+  return { doc, isLoading, status, lastSavedAt, queueSave, externalContent, externalCursor, broadcastCursor }
 }

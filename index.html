@@ -16,14 +16,20 @@
       (function () {
         try {
           var stored = localStorage.getItem('theme')
-          var theme = stored === 'github' || stored === 'light' || stored === 'dark' ? stored : 'light'
-          var colorScheme = (theme === 'dark' || theme === 'github') ? 'dark' : 'light'
+          var theme = stored === 'light' || stored === 'dark' ? stored : 'dark'
+          var colorScheme = theme === 'dark' ? 'dark' : 'light'
           var root = document.documentElement
-          root.classList.remove('github', 'light', 'dark')
+          root.classList.remove('light', 'dark')
           root.classList.add(theme)
           root.classList.add(colorScheme)
           root.setAttribute('data-theme', theme)
           root.style.colorScheme = colorScheme
+          var locale = localStorage.getItem('locale')
+          if (locale !== 'en' && locale !== 'tr') {
+            locale = (navigator.language || 'en').slice(0, 2).toLowerCase()
+            if (locale !== 'tr') locale = 'en'
+          }
+          root.setAttribute('lang', locale)
         } catch (e) {}
       })()
     </script>

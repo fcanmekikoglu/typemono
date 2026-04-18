@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useSyncExternalStore } from 'react'
 import { DEFAULT_THEME, THEMES, isTheme, type Theme } from '../lib/themes'
 
 const STORAGE_KEY = 'theme'
@@ -14,27 +14,51 @@ function readStoredTheme(): Theme {
 function applyTheme(theme: Theme) {
   const def = THEMES[theme]
   const root = document.documentElement
-  const allThemes: Theme[] = ['github', 'light', 'dark']
+  const allThemes: Theme[] = ['light', 'dark']
   for (const t of allThemes) root.classList.remove(t)
-  root.classList.remove('light', 'dark')
   root.classList.add(theme)
   root.classList.add(def.colorScheme)
   root.setAttribute('data-theme', theme)
   root.style.colorScheme = def.colorScheme
 }
 
+let currentTheme = readStoredTheme()
+const listeners = new Set<() => void>()
+
+function subscribe(listener: () => void) {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+
+function getSnapshot() {
+  return currentTheme
+}
+
+function updateTheme(t: Theme) {
+  if (t === currentTheme) return
+  currentTheme = t
+  applyTheme(t)
+  window.localStorage.setItem(STORAGE_KEY, t)
+  listeners.forEach((l) => l())
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === STORAGE_KEY && isTheme(e.newValue)) {
+      currentTheme = e.newValue
+      applyTheme(currentTheme)
+      listeners.forEach((l) => l())
+    }
+  })
+}
+
 export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>(() => readStoredTheme())
+  const theme = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
 
-  useEffect(() => {
-    applyTheme(theme)
-    window.localStorage.setItem(STORAGE_KEY, theme)
-  }, [theme])
-
-  const setTheme = useCallback((t: Theme) => setThemeState(t), [])
+  const setTheme = useCallback((t: Theme) => updateTheme(t), [])
 
   const cycle = useCallback(() => {
-    setThemeState((t) => (t === 'github' ? 'light' : t === 'light' ? 'dark' : 'github'))
+    updateTheme(currentTheme === 'light' ? 'dark' : 'light')
   }, [])
 
   return { theme, setTheme, cycle }

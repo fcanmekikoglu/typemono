@@ -1,8 +1,9 @@
 import { db, type DocRow } from './db'
 import { titleFromMarkdown } from './markdown'
 import { removeHandle } from './handles'
+import type { Locale } from './i18n'
 
-const DEFAULT_CONTENT = `# Untitled
+const DEFAULT_CONTENT_EN = `# Untitled
 
 Start writing here. Type \`/\` for the command menu, or use standard markdown:
 
@@ -22,9 +23,40 @@ console.log('hello world')
 | foo   | bar   |
 `
 
-export async function createDoc(initial?: Partial<DocRow>): Promise<DocRow> {
+const DEFAULT_CONTENT_TR = `# Başlıksız
+
+Yazmaya başlayın. Komut menüsü için \`/\` tuşuna basın ya da standart markdown kullanın:
+
+- **kalın**, *italik*, ~~üstü çizili~~
+- \`satır içi kod\`
+- [bağlantılar](https://example.com)
+
+\`\`\`js
+// sözdizimi vurgulamalı kod bloğu
+console.log('merhaba dünya')
+\`\`\`
+
+> Akılda kalıcı bir alıntı için blok alıntı.
+
+| Sütun A | Sütun B |
+| ------- | ------- |
+| foo     | bar     |
+`
+
+const DEFAULT_CONTENT: Record<Locale, string> = {
+  en: DEFAULT_CONTENT_EN,
+  tr: DEFAULT_CONTENT_TR,
+}
+
+/**
+ * IDs of documents created in this session that haven't been navigated to yet.
+ * DocPage reads this set to decide whether to auto-focus the start of the document.
+ */
+export const newDocIds = new Set<string>()
+
+export async function createDoc(initial?: Partial<DocRow>, locale: Locale = 'en'): Promise<DocRow> {
   const now = Date.now()
-  const content = initial?.content ?? DEFAULT_CONTENT
+  const content = initial?.content ?? DEFAULT_CONTENT[locale] ?? DEFAULT_CONTENT_EN
   const row: DocRow = {
     id: initial?.id ?? crypto.randomUUID(),
     title: initial?.title ?? titleFromMarkdown(content),
@@ -35,6 +67,7 @@ export async function createDoc(initial?: Partial<DocRow>): Promise<DocRow> {
   }
   await db.docs.put(row)
   await setLastOpened(row.id)
+  newDocIds.add(row.id)
   return row
 }
 

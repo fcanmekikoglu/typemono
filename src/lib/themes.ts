@@ -1,6 +1,6 @@
-export type Theme = 'github' | 'light' | 'dark'
+export type Theme = 'light' | 'dark'
 
-export const DEFAULT_THEME: Theme = 'light'
+export const DEFAULT_THEME: Theme = 'dark'
 
 export interface ThemeDef {
   id: Theme
@@ -10,12 +10,6 @@ export interface ThemeDef {
 }
 
 export const THEMES: Record<Theme, ThemeDef> = {
-  github: {
-    id: 'github',
-    label: 'GitHub',
-    description: 'GitHub-flavored sans-serif',
-    colorScheme: 'dark',
-  },
   light: {
     id: 'light',
     label: 'Light',
@@ -31,14 +25,12 @@ export const THEMES: Record<Theme, ThemeDef> = {
 }
 
 export function isTheme(v: unknown): v is Theme {
-  return v === 'github' || v === 'light' || v === 'dark'
+  return v === 'light' || v === 'dark'
 }
 
 /** Standalone CSS for the chosen theme (used in HTML/PDF export). */
 export function exportCss(theme: Theme): string {
   switch (theme) {
-    case 'github':
-      return GITHUB_EXPORT_CSS
     case 'dark':
       return DARK_EXPORT_CSS
     case 'light':
@@ -47,75 +39,14 @@ export function exportCss(theme: Theme): string {
   }
 }
 
-const GITHUB_EXPORT_CSS = `
-  :root { color-scheme: dark; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
-    font-size: 16px;
-    line-height: 1.5;
-    color: #e6edf3;
-    background: #0d1117;
-    max-width: 860px;
-    margin: 2.5rem auto;
-    padding: 0 1.5rem;
-    word-wrap: break-word;
-  }
-  h1, h2, h3, h4, h5, h6 {
-    font-weight: 600;
-    margin-top: 24px;
-    margin-bottom: 16px;
-    line-height: 1.25;
-  }
-  h1 { font-size: 2em; padding-bottom: .3em; border-bottom: 1px solid #21262d; }
-  h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid #21262d; }
-  h3 { font-size: 1.25em; }
-  h4 { font-size: 1em; }
-  h5 { font-size: .875em; }
-  h6 { font-size: .85em; color: #7d8590; }
-  p { margin: 0 0 16px; }
-  a { color: #2f81f7; text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  code, kbd, samp, pre {
-    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
-  }
-  code {
-    padding: .2em .4em;
-    font-size: 85%;
-    background: rgba(110,118,129,0.4);
-    border-radius: 6px;
-  }
-  pre {
-    padding: 16px;
-    font-size: 85%;
-    line-height: 1.45;
-    color: #e6edf3;
-    background: #161b22;
-    border-radius: 6px;
-    overflow-x: auto;
-  }
-  pre code { padding: 0; background: transparent; font-size: 100%; }
-  blockquote {
-    padding: 0 1em;
-    color: #7d8590;
-    border-left: .25em solid #30363d;
-    margin: 0 0 16px;
-  }
-  hr { height: .25em; margin: 24px 0; background: #30363d; border: 0; }
-  table { border-collapse: collapse; margin: 0 0 16px; display: block; width: max-content; max-width: 100%; overflow: auto; }
-  th, td { padding: 6px 13px; border: 1px solid #30363d; }
-  th { background: #161b22; font-weight: 600; }
-  tr:nth-child(2n) td { background: #161b22; }
-  img { max-width: 100%; }
-  ul, ol { padding-left: 2em; margin: 0 0 16px; }
-  li + li { margin-top: 0.25em; }
-  ul.contains-task-list { list-style: none; padding-left: 1.3em; }
-  ul.contains-task-list li input { margin-right: .4em; }
-  .mermaid-diagram { display: flex; justify-content: center; margin: 1.25rem 0; }
-  .mermaid-diagram svg { max-width: 100%; height: auto; }
-`
+
 
 const LIGHT_EXPORT_CSS = `
   :root { color-scheme: light; }
+  html {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
   body {
     font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
     font-size: 17px;
@@ -172,6 +103,10 @@ const LIGHT_EXPORT_CSS = `
 
 const DARK_EXPORT_CSS = `
   :root { color-scheme: dark; }
+  html {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
   body {
     font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
     font-size: 17px;

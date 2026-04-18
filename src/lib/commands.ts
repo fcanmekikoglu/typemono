@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-export type CommandSection = 'action' | 'theme' | 'document'
+export type CommandSection = 'action' | 'theme' | 'language' | 'document'
 
 export interface Command {
   id: string
@@ -17,10 +17,11 @@ export interface Command {
 export const SECTION_LABEL: Record<CommandSection, string> = {
   action: 'Actions',
   theme: 'Theme',
+  language: 'Language',
   document: 'Documents',
 }
 
-const SECTION_ORDER: CommandSection[] = ['action', 'theme', 'document']
+const SECTION_ORDER: CommandSection[] = ['action', 'theme', 'language', 'document']
 
 interface Scored {
   command: Command
