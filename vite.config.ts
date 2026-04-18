@@ -13,7 +13,14 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'logo192.png', 'logo512.png'],
+      includeAssets: [
+        'favicon.ico',
+        'images/ios/16.png',
+        'images/ios/32.png',
+        'images/ios/152.png',
+        'images/ios/167.png',
+        'images/ios/180.png',
+      ],
       devOptions: { enabled: false },
       workbox: {
         globPatterns: ['**/*.{js,css,html,woff,woff2,png,svg,ico}'],
@@ -31,9 +38,13 @@ export default defineConfig({
         start_url: '/',
         scope: '/',
         icons: [
-          { src: '/logo192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/logo512.png', sizes: '512x512', type: 'image/png' },
-          { src: '/logo512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: '/images/android/launchericon-48x48.png', sizes: '48x48', type: 'image/png' },
+          { src: '/images/android/launchericon-72x72.png', sizes: '72x72', type: 'image/png' },
+          { src: '/images/android/launchericon-96x96.png', sizes: '96x96', type: 'image/png' },
+          { src: '/images/android/launchericon-144x144.png', sizes: '144x144', type: 'image/png' },
+          { src: '/images/android/launchericon-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/images/android/launchericon-512x512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/images/android/launchericon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
     }),
