@@ -9,42 +9,19 @@ import { useNavigate } from '@tanstack/react-router'
 import { useLiveQuery } from 'dexie-react-hooks'
 import {
   Check,
-  ChevronDown,
-  Download,
-  FileDown,
   FilePlus,
   FileText,
-  FolderOpen,
   HardDrive,
-  MoonStar,
-  Printer,
-  Save,
-  Search,
-  Sun,
-  SunMoon,
+  Search as SearchIcon,
   Trash2,
-  Upload,
 } from 'lucide-react'
 import type { DocRow } from '../../lib/db'
 import { db } from '../../lib/db'
-import {
-  createDoc,
-  deleteDoc,
-  linkDocToHandle,
-  setLastOpened,
-  unlinkDocFromHandle,
-} from '../../lib/docs'
-import {
-  downloadFile,
-  importFileFallback,
-  openMarkdownFromDisk,
-  saveAsToDisk,
-  supportsFileSystemAccess,
-} from '../../lib/fs'
-import { openPrintWindow, toStandaloneHtml } from '../../lib/export'
-import { slugForFilename } from '../../lib/markdown'
+import { createDoc, deleteDoc, setLastOpened } from '../../lib/docs'
 import { useTheme } from '../../hooks/useTheme'
-import { THEMES, type Theme } from '../../lib/themes'
+import { THEMES } from '../../lib/themes'
+import { MOD_LABEL } from '../../hooks/useHotkey'
+import type { Command } from '../../lib/commands'
 
 interface MenuProps {
   label: ReactNode
@@ -85,16 +62,12 @@ function Menu({ label, children, align = 'left', width }: MenuProps) {
     }
   }, [open])
 
-  function toggle() {
-    setOpen((o) => !o)
-  }
-
   return (
     <div className="menu-wrap" ref={wrapRef}>
       <button
         type="button"
         className={`menu-trigger ${open ? 'is-open' : ''}`}
-        onClick={toggle}
+        onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -160,13 +133,31 @@ function formatRelative(ts: number): string {
 
 interface Props {
   doc: DocRow
+  commands: Command[]
+  onOpenPalette: () => void
 }
 
-export default function MenuBar({ doc }: Props) {
+const FILE_ACTION_IDS_TOP = ['file.new', 'file.open'] as const
+const FILE_ACTION_IDS_MID = ['file.saveToDisk', 'file.unlink', 'file.downloadMd', 'file.exportHtml', 'file.exportPdf'] as const
+const THEME_IDS = ['theme.github', 'theme.light', 'theme.dark'] as const
+
+export default function MenuBar({ doc, commands, onOpenPalette }: Props) {
   const navigate = useNavigate()
-  const { theme, setTheme } = useTheme()
+  const { theme } = useTheme()
   const docs = useLiveQuery(() => db.docs.orderBy('updatedAt').reverse().toArray(), [])
   const [query, setQuery] = useState('')
+
+  const byId = useMemo(() => {
+    const m = new Map<string, Command>()
+    for (const c of commands) m.set(c.id, c)
+    return m
+  }, [commands])
+
+  function run(close: () => void, id: string) {
+    close()
+    const cmd = byId.get(id)
+    if (cmd) void cmd.run()
+  }
 
   const filteredDocs = useMemo(() => {
     if (!docs) return []
@@ -176,75 +167,6 @@ export default function MenuBar({ doc }: Props) {
       (d) => d.title.toLowerCase().includes(q) || d.content.toLowerCase().includes(q),
     )
   }, [docs, query])
-
-  async function handleNew(close: () => void) {
-    const d = await createDoc()
-    close()
-    navigate({ to: '/doc/$docId', params: { docId: d.id } })
-  }
-
-  async function handleOpen(close: () => void) {
-    close()
-    if (supportsFileSystemAccess()) {
-      const result = await openMarkdownFromDisk().catch(() => null)
-      if (!result) return
-      const d = await createDoc({
-        content: result.content,
-        title: result.name.replace(/\.(md|markdown|mdx)$/i, ''),
-      })
-      await linkDocToHandle(d.id, result.handleKey)
-      navigate({ to: '/doc/$docId', params: { docId: d.id } })
-    } else {
-      const result = await importFileFallback()
-      if (!result) return
-      const d = await createDoc({
-        content: result.content,
-        title: result.name.replace(/\.(md|markdown|mdx)$/i, ''),
-      })
-      navigate({ to: '/doc/$docId', params: { docId: d.id } })
-    }
-  }
-
-  async function handleLinkToDisk(close: () => void) {
-    const key = await saveAsToDisk(`${slugForFilename(doc.title)}.md`, doc.content).catch(() => null)
-    if (key) await linkDocToHandle(doc.id, key)
-    close()
-  }
-
-  async function handleUnlink(close: () => void) {
-    await unlinkDocFromHandle(doc.id)
-    close()
-  }
-
-  function handleDownloadMd(close: () => void) {
-    downloadFile(`${slugForFilename(doc.title)}.md`, doc.content)
-    close()
-  }
-
-  async function handleExportHtml(close: () => void) {
-    const html = await toStandaloneHtml(doc.title, doc.content, theme)
-    downloadFile(`${slugForFilename(doc.title)}.html`, html, 'text/html')
-    close()
-  }
-
-  async function handleExportPdf(close: () => void) {
-    await openPrintWindow(doc.title, doc.content, theme)
-    close()
-  }
-
-  async function handleDeleteActive(close: () => void) {
-    close()
-    const ok = window.confirm(`Delete "${doc.title}"? This cannot be undone.`)
-    if (!ok) return
-    const remaining = (docs ?? []).filter((d) => d.id !== doc.id)
-    await deleteDoc(doc.id)
-    if (remaining.length > 0) {
-      navigate({ to: '/doc/$docId', params: { docId: remaining[0].id } })
-    } else {
-      const fresh = await createDoc()
-      navigate({ to: '/doc/$docId', params: { docId: fresh.id } })
-    }
-  }
 
   async function handleSwitchDoc(id: string, close: () => void) {
     await setLastOpened(id)
@@ -260,10 +182,10 @@ export default function MenuBar({ doc }: Props) {
     await deleteDoc(id)
   }
 
-  const themeIconMap: Record<Theme, typeof Sun> = {
-    github: SunMoon,
-    light: Sun,
-    dark: MoonStar,
+  async function handleNewInSidebar(close: () => void) {
+    const d = await createDoc()
+    close()
+    navigate({ to: '/doc/$docId', params: { docId: d.id } })
   }
 
   return (
@@ -277,53 +199,40 @@ export default function MenuBar({ doc }: Props) {
         <Menu label="File" width={240}>
           {(close) => (
             <>
-              <MenuItem
-                icon={<FilePlus size={14} />}
-                label="New document"
-                onClick={() => handleNew(close)}
-              />
-              <MenuItem
-                icon={supportsFileSystemAccess() ? <FolderOpen size={14} /> : <Upload size={14} />}
-                label={supportsFileSystemAccess() ? 'Open from disk…' : 'Import file…'}
-                onClick={() => handleOpen(close)}
-              />
+              {FILE_ACTION_IDS_TOP.map((id) => {
+                const cmd = byId.get(id)
+                if (!cmd) return null
+                return (
+                  <MenuItem
+                    key={id}
+                    icon={cmd.icon}
+                    label={cmd.title}
+                    onClick={() => run(close, id)}
+                  />
+                )
+              })}
               <MenuSep />
-              {supportsFileSystemAccess() && !doc.linkedHandleKey && (
+              {FILE_ACTION_IDS_MID.map((id) => {
+                const cmd = byId.get(id)
+                if (!cmd) return null
+                return (
+                  <MenuItem
+                    key={id}
+                    icon={cmd.icon}
+                    label={cmd.title}
+                    onClick={() => run(close, id)}
+                  />
+                )
+              })}
+              <MenuSep />
+              {byId.get('file.delete') && (
                 <MenuItem
-                  icon={<Save size={14} />}
-                  label="Save to disk…"
-                  onClick={() => handleLinkToDisk(close)}
+                  icon={byId.get('file.delete')!.icon}
+                  label="Delete this document"
+                  onClick={() => run(close, 'file.delete')}
+                  danger
                 />
               )}
-              {doc.linkedHandleKey && (
-                <MenuItem
-                  icon={<HardDrive size={14} />}
-                  label="Unlink disk file"
-                  onClick={() => handleUnlink(close)}
-                />
-              )}
-              <MenuItem
-                icon={<Download size={14} />}
-                label="Download .md"
-                onClick={() => handleDownloadMd(close)}
-              />
-              <MenuItem
-                icon={<FileDown size={14} />}
-                label="Export HTML"
-                onClick={() => handleExportHtml(close)}
-              />
-              <MenuItem
-                icon={<Printer size={14} />}
-                label="Export PDF (Print)"
-                onClick={() => handleExportPdf(close)}
-              />
-              <MenuSep />
-              <MenuItem
-                icon={<Trash2 size={14} />}
-                label="Delete this document"
-                onClick={() => handleDeleteActive(close)}
-                danger
-              />
             </>
           )}
         </Menu>
@@ -332,12 +241,14 @@ export default function MenuBar({ doc }: Props) {
           {(close) => (
             <>
               <div className="menu-section-label">Theme</div>
-              {(['github', 'light', 'dark'] as const).map((t) => {
-                const Icon = themeIconMap[t]
+              {THEME_IDS.map((id) => {
+                const cmd = byId.get(id)
+                if (!cmd) return null
+                const t = id.split('.')[1] as 'github' | 'light' | 'dark'
                 return (
                   <MenuItem
-                    key={t}
-                    icon={<Icon size={14} />}
+                    key={id}
+                    icon={cmd.icon}
                     label={
                       <span className="menu-theme-label">
                         <span>{THEMES[t].label}</span>
@@ -345,10 +256,7 @@ export default function MenuBar({ doc }: Props) {
                       </span>
                     }
                     hint={theme === t ? <Check size={12} /> : null}
-                    onClick={() => {
-                      setTheme(t)
-                      close()
-                    }}
+                    onClick={() => run(close, id)}
                   />
                 )
               })}
@@ -368,7 +276,7 @@ export default function MenuBar({ doc }: Props) {
           {(close) => (
             <>
               <div className="menu-search">
-                <Search size={13} />
+                <SearchIcon size={13} />
                 <input
                   type="search"
                   placeholder="Search documents…"
@@ -403,17 +311,19 @@ export default function MenuBar({ doc }: Props) {
                       </span>
                       {d.id === doc.id && <Check size={13} className="menu-doc-check" />}
                     </button>
-                    {d.id !== doc.id && (
-                      <button
-                        type="button"
-                        className="menu-doc-delete"
-                        onClick={() => handleDeleteOther(d.id)}
-                        title="Delete"
-                        aria-label={`Delete ${d.title}`}
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      className="menu-doc-delete"
+                      onClick={() =>
+                        d.id === doc.id
+                          ? run(close, 'file.delete')
+                          : handleDeleteOther(d.id)
+                      }
+                      title="Delete"
+                      aria-label={`Delete ${d.title}`}
+                    >
+                      <Trash2 size={12} />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -421,7 +331,7 @@ export default function MenuBar({ doc }: Props) {
               <MenuItem
                 icon={<FilePlus size={14} />}
                 label="New document"
-                onClick={() => handleNew(close)}
+                onClick={() => handleNewInSidebar(close)}
               />
             </>
           )}
@@ -437,6 +347,22 @@ export default function MenuBar({ doc }: Props) {
         )}
       </div>
 
+      <div className="menubar-right">
+        <button
+          type="button"
+          className="palette-trigger"
+          onClick={onOpenPalette}
+          title={`Search (${MOD_LABEL}+K)`}
+          aria-label={`Open command palette (${MOD_LABEL}+K)`}
+        >
+          <SearchIcon size={12} />
+          <span className="palette-trigger-label">Search…</span>
+          <span className="palette-trigger-kbd">
+            <span className="kbd">{MOD_LABEL}</span>
+            <span className="kbd">K</span>
+          </span>
+        </button>
+      </div>
     </header>
   )
 }

@@ -14,7 +14,7 @@ export const THEMES: Record<Theme, ThemeDef> = {
     id: 'github',
     label: 'GitHub',
     description: 'GitHub-flavored sans-serif',
-    colorScheme: 'light',
+    colorScheme: 'dark',
   },
   light: {
     id: 'light',
@@ -48,13 +48,13 @@ export function exportCss(theme: Theme): string {
 }
 
 const GITHUB_EXPORT_CSS = `
-  :root { color-scheme: light; }
+  :root { color-scheme: dark; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
     font-size: 16px;
     line-height: 1.5;
-    color: #1f2328;
-    background: #ffffff;
+    color: #e6edf3;
+    background: #0d1117;
     max-width: 860px;
     margin: 2.5rem auto;
     padding: 0 1.5rem;
@@ -66,14 +66,14 @@ const GITHUB_EXPORT_CSS = `
     margin-bottom: 16px;
     line-height: 1.25;
   }
-  h1 { font-size: 2em; padding-bottom: .3em; border-bottom: 1px solid #d1d9e0; }
-  h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid #d1d9e0; }
+  h1 { font-size: 2em; padding-bottom: .3em; border-bottom: 1px solid #21262d; }
+  h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid #21262d; }
   h3 { font-size: 1.25em; }
   h4 { font-size: 1em; }
   h5 { font-size: .875em; }
-  h6 { font-size: .85em; color: #59636e; }
+  h6 { font-size: .85em; color: #7d8590; }
   p { margin: 0 0 16px; }
-  a { color: #0969da; text-decoration: none; }
+  a { color: #2f81f7; text-decoration: none; }
   a:hover { text-decoration: underline; }
   code, kbd, samp, pre {
     font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
@@ -81,30 +81,30 @@ const GITHUB_EXPORT_CSS = `
   code {
     padding: .2em .4em;
     font-size: 85%;
-    background: rgba(129,139,152,0.18);
+    background: rgba(110,118,129,0.4);
     border-radius: 6px;
   }
   pre {
     padding: 16px;
     font-size: 85%;
     line-height: 1.45;
-    color: #1f2328;
-    background: #f6f8fa;
+    color: #e6edf3;
+    background: #161b22;
     border-radius: 6px;
     overflow-x: auto;
   }
   pre code { padding: 0; background: transparent; font-size: 100%; }
   blockquote {
     padding: 0 1em;
-    color: #59636e;
-    border-left: .25em solid #d1d9e0;
+    color: #7d8590;
+    border-left: .25em solid #30363d;
     margin: 0 0 16px;
   }
-  hr { height: .25em; margin: 24px 0; background: #d1d9e0; border: 0; }
+  hr { height: .25em; margin: 24px 0; background: #30363d; border: 0; }
   table { border-collapse: collapse; margin: 0 0 16px; display: block; width: max-content; max-width: 100%; overflow: auto; }
-  th, td { padding: 6px 13px; border: 1px solid #d1d9e0; }
-  th { background: #f6f8fa; font-weight: 600; }
-  tr:nth-child(2n) td { background: #f6f8fa; }
+  th, td { padding: 6px 13px; border: 1px solid #30363d; }
+  th { background: #161b22; font-weight: 600; }
+  tr:nth-child(2n) td { background: #161b22; }
   img { max-width: 100%; }
   ul, ol { padding-left: 2em; margin: 0 0 16px; }
   li + li { margin-top: 0.25em; }

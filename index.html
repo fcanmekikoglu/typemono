@@ -11,7 +11,7 @@
         try {
           var stored = localStorage.getItem('theme')
           var theme = stored === 'github' || stored === 'light' || stored === 'dark' ? stored : 'light'
-          var colorScheme = theme === 'dark' ? 'dark' : 'light'
+          var colorScheme = (theme === 'dark' || theme === 'github') ? 'dark' : 'light'
           var root = document.documentElement
           root.classList.remove('github', 'light', 'dark')
           root.classList.add(theme)
