@@ -20,7 +20,7 @@
   --menubar-bg: rgba(250, 251, 250, 0.88);
   --line: rgba(23, 40, 45, 0.09);
   --line-strong: rgba(23, 40, 45, 0.16);
-  --selection: rgba(43, 122, 120, 0.22);
+  --selection: rgba(43, 122, 120, 0.40);
   --danger: #b54242;
   --warn: #b27414;
   --ok: #2f7f4a;
@@ -97,7 +97,20 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-::selection { background: var(--selection); }
+::selection { background: var(--selection) !important; color: inherit !important; }
+::-webkit-selection { background: var(--selection) !important; color: inherit !important; }
+
+:root.light ::selection,
+:root[data-theme="light"] ::selection {
+  background: rgba(43, 122, 120, 0.50) !important;
+  color: var(--ink) !important;
+}
+
+:root.light ::-webkit-selection,
+:root[data-theme="light"] ::-webkit-selection {
+  background: rgba(43, 122, 120, 0.50) !important;
+  color: var(--ink) !important;
+}
 
 button {
   font: inherit;
@@ -631,6 +644,7 @@ input, textarea {
   border-top: 1px solid var(--line);
   background: var(--surface-sunken);
   letter-spacing: 0.01em;
+  user-select: none;
 }
 
 .statusbar-status {

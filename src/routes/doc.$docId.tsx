@@ -63,6 +63,10 @@ function DocPage() {
     })
   }, [])
   useHotkey('mod+k', togglePalette, { allowInInputs: true })
+  const focusFileMenu = useCallback(() => {
+    document.getElementById('file-menu-trigger')?.focus()
+  }, [])
+  useHotkey('mod+b', focusFileMenu, { allowInInputs: true })
 
   if (isLoading) {
     return (

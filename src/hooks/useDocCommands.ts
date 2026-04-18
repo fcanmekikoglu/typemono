@@ -12,6 +12,7 @@ import {
   FolderOpen,
   Globe,
   HardDrive,
+  Keyboard,
   MoonStar,
   Printer,
   Save,

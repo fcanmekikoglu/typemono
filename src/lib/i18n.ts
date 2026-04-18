@@ -98,6 +98,14 @@ export interface Dict {
     notFound: string
     diskChip: string
   }
+  shortcuts: {
+    title: string
+    formatting: string
+    bold: string
+    italic: string
+    code: string
+    link: string
+  }
 }
 
 const en: Dict = {
@@ -187,6 +195,14 @@ const en: Dict = {
     notFound: 'Document not found.',
     diskChip: 'Disk',
   },
+  shortcuts: {
+    title: 'Keyboard Shortcuts',
+    formatting: 'Text Formatting',
+    bold: 'Bold',
+    italic: 'Italic',
+    code: 'Inline Code',
+    link: 'Link',
+  },
 }
 
 const tr: Dict = {
@@ -275,6 +291,14 @@ const tr: Dict = {
     loading: 'Yükleniyor…',
     notFound: 'Belge bulunamadı.',
     diskChip: 'Disk',
+  },
+  shortcuts: {
+    title: 'Klavye Kısayolları',
+    formatting: 'Metin Biçimlendirme',
+    bold: 'Kalın',
+    italic: 'İtalik',
+    code: 'Satır İçi Kod',
+    link: 'Bağlantı',
   },
 }
 

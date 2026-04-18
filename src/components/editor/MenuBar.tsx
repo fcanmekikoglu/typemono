@@ -9,6 +9,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useLiveQuery } from 'dexie-react-hooks'
 import {
   Check,
+  ChevronRight,
   FilePlus,
   FileText,
   HardDrive,
@@ -34,20 +35,21 @@ interface MenuProps {
   align?: 'left' | 'right'
   width?: number
   autoFocusFirst?: boolean
+  id?: string
 }
 
 const MENU_OPEN_EVENT = 'typemono:menu-open'
 
-function Menu({ label, children, align = 'left', width, autoFocusFirst = true }: MenuProps) {
+function Menu({ label, children, align = 'left', width, autoFocusFirst = true, id }: MenuProps) {
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement | null>(null)
   const triggerRef = useRef<HTMLButtonElement | null>(null)
   const popRef = useRef<HTMLDivElement | null>(null)
-  const id = useRef<symbol>(Symbol('menu'))
+  const menuId = useRef<symbol>(Symbol('menu'))
 
   useEffect(() => {
     function onOtherOpen(e: Event) {
-      if ((e as CustomEvent<symbol>).detail !== id.current) setOpen(false)
+      if ((e as CustomEvent<symbol>).detail !== menuId.current) setOpen(false)
     }
     document.addEventListener(MENU_OPEN_EVENT, onOtherOpen)
     return () => document.removeEventListener(MENU_OPEN_EVENT, onOtherOpen)
@@ -55,7 +57,7 @@ function Menu({ label, children, align = 'left', width, autoFocusFirst = true }:
 
   useEffect(() => {
     if (!open) return
-    document.dispatchEvent(new CustomEvent(MENU_OPEN_EVENT, { detail: id.current }))
+    document.dispatchEvent(new CustomEvent(MENU_OPEN_EVENT, { detail: menuId.current }))
     function onDocMouseDown(e: MouseEvent) {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false)
     }
@@ -119,6 +121,7 @@ function Menu({ label, children, align = 'left', width, autoFocusFirst = true }:
     >
       <button
         ref={triggerRef}
+        id={id}
         type="button"
         className={`menu-trigger ${open ? 'is-open' : ''}`}
         onClick={() => setOpen((o) => !o)}
@@ -182,6 +185,39 @@ function MenuSep() {
   return <div className="menu-sep" role="separator" />
 }
 
+function SubMenuTrigger({
+  icon,
+  label,
+  badge,
+  open,
+  onClick,
+}: {
+  icon?: ReactNode
+  label: ReactNode
+  badge?: ReactNode
+  open: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      className="menu-item"
+      onClick={onClick}
+    >
+      <span className="menu-item-icon">{icon}</span>
+      <span className="menu-item-label">{label}</span>
+      <span className="menu-item-hint" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        {badge}
+        <ChevronRight
+          size={12}
+          style={{ transition: 'transform 150ms ease', transform: open ? 'rotate(90deg)' : 'none' }}
+        />
+      </span>
+    </button>
+  )
+}
+
 function formatRelative(ts: number): string {
   const diff = Date.now() - ts
   const s = Math.round(diff / 1000)
@@ -214,6 +250,7 @@ export default function MenuBar({ doc, commands, onOpenPalette, confirm }: Props
   const { locale, setLocale, t } = useLocale()
   const docs = useLiveQuery(() => db.docs.orderBy('updatedAt').reverse().toArray(), [])
   const [query, setQuery] = useState('')
+  const [docsOpen, setDocsOpen] = useState(false)
   // Track which doc row is keyboard-focused inside the documents list
   const [focusedDocId, setFocusedDocId] = useState<string | null>(null)
 
@@ -279,7 +316,7 @@ export default function MenuBar({ doc, commands, onOpenPalette, confirm }: Props
       <div className="menubar-brand" />
 
       <nav className="menubar-menus" aria-label="Application menu">
-        <Menu label={t.menu.file} width={240}>
+        <Menu label={t.menu.file} width={240} id="file-menu-trigger">
           {(close) => (
             <>
               {FILE_ACTION_IDS_TOP.map((id) => {
@@ -357,6 +394,14 @@ export default function MenuBar({ doc, commands, onOpenPalette, confirm }: Props
                   }}
                 />
               ))}
+              <MenuSep />
+              <div className="menu-section-label">{t.shortcuts.formatting}</div>
+              <div style={{ padding: '8px 10px', fontSize: '11.5px', color: 'var(--ink-soft)', lineHeight: '1.6' }}>
+                <div><kbd className="kbd">{MOD_LABEL}+B</kbd> {t.shortcuts.bold}</div>
+                <div><kbd className="kbd">{MOD_LABEL}+I</kbd> {t.shortcuts.italic}</div>
+                <div><kbd className="kbd">{MOD_LABEL}+`</kbd> {t.shortcuts.code}</div>
+                <div><kbd className="kbd">{MOD_LABEL}+K</kbd> {t.shortcuts.link}</div>
+              </div>
             </>
           )}
         </Menu>
